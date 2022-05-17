@@ -5,36 +5,44 @@ const userSchema = new mongoose.Schema({
     title: {
         type: String,
         required: [true, "Title is required"],
-        enum: ["Mr", "Mrs","Miss"]
+        enum: ["Mr", "Mrs","Miss"],
+        trim:true
     },
     name: {
         type: String,
         required: [true, "Name is required"],
+        trim:true
     },
     phone: {
         type: String,
         required: [true, "Phone number is required"],
-        unique: true
+        unique: true,
+        trim:true
     },
     email: {
         type: String,
         required: [true, "Email is required"],
-        unique: true
+        unique: true,
+        trim:true
     },
     password: {
         type: String,
         required: [true, "Password is required"],
+        trim:true
     },
     address: {
         street: {
-            type: String
+            type: String,
+            trim:true
         },
         city: {
-            type: String
+            type: String,
+            trim:true
         },
         pincode: {
             type: String,
-            length: 6
+            length: 6,
+            trim:true
         }
     },
 

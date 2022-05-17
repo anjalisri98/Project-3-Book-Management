@@ -7,39 +7,39 @@ const bookSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        trim:true
+        trim: true
     },
     excerpt: {
         type: String,
-        required: true,,
-        trim:true
+        required: true,
+        trim: true
     },
     userId: {
         type: ObjectId,
         required: true,
         ref: ('User'),
-        trim:true
+        trim: true
     },
     ISBN: {
         type: String,
         required: true,
         unique: true,
-        trim:true
+        trim: true
     },
     category: {
         type: String,
         required: true,
-        trim:true
+        trim: true
     },
     subcategory: {
         type: [String],
         required: true,
-        trim:true
+        trim: true
     },
     reviews: {
         type: Number,
         default: 0,
-        trim:true
+        trim: true
     },
     deletedAt: {
         type: Date
@@ -51,7 +51,7 @@ const bookSchema = new mongoose.Schema({
     releasedAt: {
         type: Date,
         required: true,
-        trim:true
+        trim: true
     }
 
 }, { timestamps: true })

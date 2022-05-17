@@ -14,7 +14,7 @@ router.post("/register", userController.registerUser);
 router.post("/login", userController.loginUser);
 
 //Api for posting books
-router.post("/books",middleware.authentication,bookController.createBook);
+router.post("/books",middleware.authentication, bookController.createBook);
 
 //Api for getting books by query params
 router.get("/books", middleware.authentication, bookController.getBooks);
