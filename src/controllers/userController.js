@@ -1,5 +1,14 @@
 const userModel = require("../models/userModel");
 const jwt = require("jsonwebtoken");
+const {
+  isValid,
+  isValidName,
+  isValidPhone,
+  isValidEmail,
+  isValidPincode,
+  isValidPassword,
+  isValidReqBody,
+} = require("../validator/validation");
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -8,154 +17,148 @@ const registerUser = async function (req, res) {
     // data sent through request body
     let data = req.body;
 
-    // function to validate empty spaces
-    function onlySpaces(str) {
-      return /^\s*$/.test(str);
+    // if request body is empty
+    if (!isValidReqBody(data)) {
+      return res
+        .status(400)
+        .send({ status: false, message: " Please enter user details" });
     }
+
+    let title = data.title;
+    let name = data.name;
+    let phone = data.phone;
+    let email = data.email?.toLowerCase();
+    let password = data.password;
+    let street = data.address?.street;
+    let city = data.address?.city;
+    let pincode = data.address?.pincode;
 
     // VALIDATIONS:
 
-    // title validation
-    let enumArr = ["Mr", "Mrs", "Miss"];
-    if (!data.title) {
-      return res
-        .status(400)
-        .send({ status: false, msg: " Please enter title(required field)" });
-    } else if (onlySpaces(data.title) == true) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "title cannot be a empty" });
-    } else if (!enumArr.includes(data.title)) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "Please enter valid title" });
+    // if title is empty
+    if (isValid(title) === false) {
+      return res.status(400).send({
+        status: false,
+        message: " Please enter title(required field)",
+      });
     }
-
-    //   name: {string, mandatory},
-    // name validation
-    if (!data.name) {
+    // if title is invalid
+    // AMBIGUITY: avoid shifting to validator; TITLE is also used for book's title
+    let enumArr = ["Mr", "Mrs", "Miss"];
+    if (!enumArr.includes(title)) {
       return res
         .status(400)
-        .send({ status: false, msg: "Please enter name(required field) " });
-    } else if (onlySpaces(data.name) == true) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "name cannot be a empty" });
-    } else if (!isNaN(data.name)) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "name cannot be a number" });
+        .send({ status: false, message: "Please enter valid title" });
     }
 
     // if phone is empty
-    if (!data.phone)
+    if (isValid(name) === false) {
+      return res
+        .status(400)
+        .send({ status: false, message: "Please enter name(required field) " });
+    }
+    // name validation
+    if (!isValidName(name)) {
+      return res
+        .status(400)
+        .send({ status: false, msg: "plesae give a valid name" });
+    }
+
+    // if phone is empty
+    if (isValid(phone) === false)
       return res.status(400).send({
         status: false,
-        msg: "Please enter the phone number(required field)",
+        message: "Please enter the phone number(required field)",
       });
     // if phone is invalid
-    if (!/^(\+\d{1,3}[- ]?)?\d{10}$/.test(data.phone))
+    if (isValidPhone(phone) === false)
       return res.status(400).send({
         status: false,
-        msg: `${data.phone} is not a valid phone number; Please provide a valid phone number`,
+        message: `${phone} is not a valid phone number; Please provide a valid phone number`,
       });
     // phone duplication check
     let phoneCheck = await userModel.findOne({
-      phone: data.phone,
+      phone: phone,
     });
     if (phoneCheck)
       return res
         .status(400)
-        .send({ status: false, msg: "Phone number is already used!" });
+        .send({ status: false, message: "Phone number is already used!" });
 
-    // email validation
-    if (!data.email) {
+    // if email is empty
+    if (isValid(email) === false) {
+      return res.status(400).send({
+        status: false,
+        message: " Please Enter email(required field)",
+      });
+    }
+    // if email is invalid
+    if (isValidEmail(email) === false) {
       return res
         .status(400)
-        .send({ status: false, msg: " Please Enter email(required field)" });
-    } else if (onlySpaces(data.email) == true) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "email cannot be a empty" });
-    } else if (data.email) {
-      let check = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(
-        data.email
-      );
-      if (!check) {
-        return res
-          .status(400)
-          .send({ status: false, msg: " Please enter valid emailid" });
-      }
-      // MANIPULATE THE EMAIL TO MAKE IT SMALLCASE
-      if (!(data.email === String(data.email).toLowerCase())) {
-        return res.status(400).send({
-          status: false,
-          msg: "Capital letters are not allowed in emailid",
-        });
-      }
+        .send({ status: false, message: " Please enter valid email" });
     }
     // email duplication check
     let emaildb = await userModel.findOne(
-      { email: data.email },
+      { email: email },
       { email: 1, _id: 0 }
     );
     if (emaildb) {
       return res.status(400).send({
         status: false,
-        msg: "We are sorry; this email is already registered",
+        message: "We are sorry; this email is already used",
       });
     }
 
-    // password validation
-    let pwd = data.password;
-    if (!pwd) {
-      return res
-        .status(400)
-        .send({ status: false, msg: " Please enter password(required field)" });
-    }
-    // if password has blank space in start/end
-    else if ([pwd[0], pwd[pwd.length]].includes("")) {
+    // is password is empty
+    if (isValid(password) === false) {
       return res.status(400).send({
         status: false,
-        msg: "Your password can't start or end with a blank space",
+        message: " Please enter password(required field)",
       });
     }
-    //password length validation
-    else if (!(8 < pwd.length < 15)) {
-      let operator = "";
-      if (pwd.length < 8) operator = "less than 8 characters";
-      else if (pwd.length > 15) operator = "greater than 15 characters";
-      return res
-        .status(400)
-        .send({ status: false, msg: `Password length cannot be ${operator}` });
+
+    // if password is invalid
+    if (isValidPassword(password) === false) {
+      let length = "";
+      if (password.length < 8) length = "less than 8 characters";
+      else if (password.length > 15) length = "greater than 15 characters";
+      return res.status(400).send({
+        status: false,
+        message: `password cannot be ${length}`,
+      });
     }
 
-    // street has only whitespace characters
-    if (onlySpaces(data.address?.street) === true) {
-      return res.status(400).send({ status: false, msg: "street is invalid" });
+    if (data.address) {
+      // if street only has whitespace characters
+      if (!street?.trim()) {
+        return res
+          .status(400)
+          .send({ status: false, message: "street is invalid" });
+      }
+      // if city only has whitespace characters
+      if (!city?.trim()) {
+        return res
+          .status(400)
+          .send({ status: false, message: "city is invalid" });
+      }
+      // pincode validation
+      if (isValidPincode(pincode) === false) {
+        return res
+          .status(400)
+          .send({ status: false, message: "Please enter valid pincode" });
+      }
     }
 
-    // city has only whitespace characters
-    if (onlySpaces(data.address?.city) === true) {
-      return res.status(400).send({ status: false, msg: "city is invalid" });
-    }
-
-    // PIN code validation
-    if (!/^[1-9]{1}[0-9]{2}\s?[0-9]{3}$/.test(data.address.pincode)) {
-      return res
-        .status(400)
-        .send({ status: false, msg: "Please enter valid PIN code" });
-    }
-
-    // creating user
-    let savedData = await userModel.create(data);
+    // registering user
+    let registeredUser = await userModel.create(data);
 
     // response
-    res.status(201).send({ status: true, msg: savedData });
+    res.status(201).send({ status: true, message: registeredUser });
   } catch (err) {
     res.status(500).send({
       status: false,
-      msg: "Internal Server Error",
+      message: "Internal Server Error",
       error: err.message,
     });
   }
@@ -168,6 +171,22 @@ const loginUser = async function (req, res) {
     // login credentials sent through request body
     let email = req.body.email;
     let password = req.body.password;
+
+    // if email is empty
+    if (isValid(email) === false) {
+      return res.status(400).send({
+        status: false,
+        message: "Please enter email!",
+      });
+    }
+
+    // if password is empty
+    if (isValid(password) === false) {
+      return res.status(400).send({
+        status: false,
+        message: "Please enter password!",
+      });
+    }
 
     // user document satisfying the login credentials
     let loginCredentials = await userModel.findOne({
@@ -199,15 +218,17 @@ const loginUser = async function (req, res) {
 
     res.status(200).send({
       status: true,
-      msg: "Login Successfull! Token sent in header 'x-api-key'",
+      message: "Login Successfull! Token sent in header 'x-api-key'",
     });
   } catch (err) {
     res.status(500).send({
       status: false,
-      msg: "Internal Server Error",
+      message: "Internal Server Error",
       error: err.message,
     });
   }
 };
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------
 
 module.exports = { registerUser, loginUser };
